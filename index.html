@@ -72,6 +72,7 @@
 
 		<script src="js/controls/OrbitControls.js"></script>
 		<script src="js/controls/PointerLockControls.js"></script>
+		<script src="js/controls/DeviceOrientationControls.js">
 		<script src="js/objects/Water.js"></script>
 		<script src="js/objects/Sky.js"></script>
 		<script src="js/loaders/DDSLoader.js"></script>
@@ -190,12 +191,18 @@
 
 				//
 
-				camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 1, 20000 );
+				camera = new THREE.PerspectiveCamera( 55, window.innerWidth / window.innerHeight, 1, 20000 )
+				;
 				camera.position.set( 0, 20, 20 );
 
 				//
 
-				controls = new THREE.PointerLockControls( camera );
+				if( havePointerLock ){
+					controls = new THREE.PointerLockControls( camera );
+				} else {
+					controls = new THREE.DeviceOrientationControls( camera );
+				}
+
 				scene.add( controls.getObject() );
 
 				//
