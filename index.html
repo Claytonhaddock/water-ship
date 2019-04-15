@@ -497,7 +497,9 @@
 					prevTime = time;
 
 				} else {
-					controls.update();
+					if(typeof controls.update === 'function'){
+						controls.update();
+					}
 				}
 				requestAnimationFrame( animate );
 				render();
