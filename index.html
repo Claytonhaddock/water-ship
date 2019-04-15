@@ -96,10 +96,13 @@
 
 			var blocker = document.getElementById( 'blocker' );
 			var instructions = document.getElementById( 'instructions' );
+			var isAndroid = /(android)/i.test(navigator.userAgent);
 
-			var havePointerLock = 'pointerLockElement' in document || 'mozPointerLockElement' in document || 'webkitPointerLockElement' in document;
+			var havePointerLock = 'pointerLockElement' in document
+			|| 'mozPointerLockElement' in document
+			|| 'webkitPointerLockElement' in document;
 
-			if ( havePointerLock ) {
+			if ( havePointerLock && !isAndroid ) {
 
 				var element = document.body;
 
