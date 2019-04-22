@@ -17,6 +17,7 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 	this.lookSpeed = 0.005;
 
 	this.lookVertical = true;
+	this.lookHorizontal = true;
 	this.autoForward = false;
 
 	this.activeLook = true;
@@ -29,6 +30,10 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 	this.constrainVertical = false;
 	this.verticalMin = 0;
 	this.verticalMax = Math.PI;
+
+	this.constrainHorizontal = false;
+	this.horizontalMin = 0;
+	this.horizontalMax = Math.PI;
 
 	this.autoSpeedFactor = 0.0;
 
@@ -220,26 +225,33 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 
 		}
 
-		var verticalLookRatio = 1;
+		var verticalLookRatio   = 1;
+		var HorizontalLookRatio = 1;
 
 		if ( this.constrainVertical ) {
-
 			verticalLookRatio = Math.PI / ( this.verticalMax - this.verticalMin );
-
 		}
 
-		this.lon += this.mouseX * actualLookSpeed;
-		if ( this.lookVertical ) this.lat -= this.mouseY * actualLookSpeed * verticalLookRatio;
+		if ( this.constrainHorizontal ) {
+			HorizontalLookRatio = Math.PI / ( this.horizontalMax - this.horizontalMin );
+		}
+
+		if ( this.lookHorizontal ) this.lon += this.mouseX * actualLookSpeed * HorizontalLookRatio;
+		if ( this.lookVertical )   this.lat -= this.mouseY * actualLookSpeed * verticalLookRatio;
 
 		this.lat = Math.max( - 85, Math.min( 85, this.lat ) );
+		this.lon = Math.max( - 10, Math.min( 100, this.lon ) );
 		this.phi = THREE.Math.degToRad( 90 - this.lat );
 
 		this.theta = THREE.Math.degToRad( this.lon );
 
 		if ( this.constrainVertical ) {
-
 			this.phi = THREE.Math.mapLinear( this.phi, 0, Math.PI, this.verticalMin, this.verticalMax );
+		}
 
+		if ( this.constrainHorizontal ) {
+			let pre = this.theta
+			this.theta = THREE.Math.mapLinear( this.theta, 0, Math.PI, this.horizontalMin, this.horizontalMax );
 		}
 
 		var targetPosition = this.target,
@@ -250,7 +262,6 @@ THREE.FirstPersonControls = function ( object, domElement ) {
 		targetPosition.z = position.z + 100 * Math.sin( this.phi ) * Math.sin( this.theta );
 
 		this.object.lookAt( targetPosition );
-
 	};
 
 	function contextmenu( event ) {

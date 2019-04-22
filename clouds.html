@@ -1,0 +1,283 @@
+
+<!DOCTYPE HTML>
+<html lang="en">
+	<head>
+		<title>Clouds</title>
+		<meta charset="utf-8">
+		<style type="text/css">
+
+			body {
+				background-color: #326696;
+				margin: 0px;
+				overflow: hidden;
+				font-family:Monospace;
+				font-size:13px;
+				text-align:center;
+				font-weight: bold;
+				text-align:center;
+			}
+
+			a {
+				color:#0078ff;
+			}
+
+		</style>
+	</head>
+	<body>
+		<script src="three.js"></script>
+		<script src="js/controls/FirstPersonControls.js"></script>
+		<script src="js/loaders/GLTFLoader.js"></script>
+		<script type="text/javascript" src="js/Detector.js"></script>
+
+		<script id="vs" type="x-shader/x-vertex">
+
+			varying vec2 vUv;
+
+			void main() {
+
+				vUv = uv;
+				gl_Position = projectionMatrix * modelViewMatrix * vec4( position, 1.0 );
+
+			}
+
+		</script>
+
+		<script id="fs" type="x-shader/x-fragment">
+
+			uniform sampler2D map;
+
+			uniform vec3 fogColor;
+			uniform float fogNear;
+			uniform float fogFar;
+
+			varying vec2 vUv;
+
+			void main() {
+
+				float depth = gl_FragCoord.z / gl_FragCoord.w;
+				float fogFactor = smoothstep( fogNear, fogFar, depth );
+
+				gl_FragColor = texture2D( map, vUv );
+				gl_FragColor.w *= pow( gl_FragCoord.z, 20.0 );
+				gl_FragColor = mix( gl_FragColor, vec4( fogColor, gl_FragColor.w ), fogFactor );
+
+			}
+
+		</script>
+
+		<script type="text/javascript">
+
+			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
+
+			var container;
+			var camera, scene, scene2, renderer, controls, ship;
+			var dirLight, dirLightHeper, hemiLight, hemiLightHelper;
+			var mesh, geometry, material;
+
+			var mouseX = 0, mouseY = 0;
+			var start_time = Date.now();
+			var clock = new THREE.Clock();
+
+			var windowHalfX = window.innerWidth / 2;
+			var windowHalfY = window.innerHeight / 2;
+
+			init();
+
+			function init() {
+
+				container = document.createElement( 'div' );
+				document.body.appendChild( container );
+
+				// Bg gradient
+
+				var canvas = document.createElement( 'canvas' );
+				canvas.width = 32;
+				canvas.height = window.innerHeight;
+
+				var context = canvas.getContext( '2d' );
+
+				var gradient = context.createLinearGradient( 0, 0, 0, canvas.height );
+				gradient.addColorStop(0, "#1e4877");
+				gradient.addColorStop(0.5, "#4584b4");
+
+				context.fillStyle = gradient;
+				context.fillRect(0, 0, canvas.width, canvas.height);
+
+				container.style.background = 'url(' + canvas.toDataURL('image/png') + ')';
+				container.style.backgroundSize = '32px 100%';
+
+				//
+
+				camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 3000 );
+				camera.position.z = 6000;
+				camera.position.y = 10;
+
+				controls = new THREE.FirstPersonControls(camera);
+		        controls.lookSpeed = 0.4;
+		        controls.movementSpeed = 20;
+		        controls.noFly = true;
+		        controls.lookVertical = true;
+		        controls.lookHorizontal = true;
+
+		        controls.constrainVertical = true;
+		        controls.verticalMin = 1.5;
+		        controls.verticalMax = 1.8;
+
+		        controls.constrainHorizontal = true;
+		        controls.horizontalMin = 4.5;
+		        controls.horizontalMax = 6;
+		        controls.lon = -150;
+		        controls.lat = 120;
+
+				scene = new THREE.Scene();
+				scene2 = new THREE.Scene();
+
+				// LIGHTS
+
+				var hemiLight = new THREE.HemisphereLight( 0xffffff, 0xffffff, 1 );
+				hemiLight.color.setHSL( 0.6, 1, 0.6 );
+				hemiLight.groundColor.setHSL( 0.095, 1, 0.75 );
+				hemiLight.position.set( 0, 50, 0 );
+				scene2.add( hemiLight );
+				hemiLightHelper = new THREE.HemisphereLightHelper( hemiLight, 10 );
+				scene2.add( hemiLightHelper );
+
+				dirLight = new THREE.DirectionalLight( 0xffffff, 1 );
+				dirLight.color.setHSL( 0.1, 1, 0.95 );
+				dirLight.position.set( - 1, 1.75, 1 );
+				dirLight.position.multiplyScalar( 30 );
+				scene2.add( dirLight );
+				dirLight.castShadow = true;
+				dirLight.shadow.mapSize.width = 2048;
+				dirLight.shadow.mapSize.height = 2048;
+				var d = 50;
+				dirLight.shadow.camera.left = - d;
+				dirLight.shadow.camera.right = d;
+				dirLight.shadow.camera.top = d;
+				dirLight.shadow.camera.bottom = - d;
+				dirLight.shadow.camera.far = 3500;
+				dirLight.shadow.bias = - 0.0001;
+				dirLightHeper = new THREE.DirectionalLightHelper( dirLight, 10 );
+				scene2.add( dirLightHeper );
+
+				geometry = new THREE.Geometry();
+
+				var texture = THREE.ImageUtils.loadTexture( 'cloud10.png', null, animate );
+				texture.magFilter = THREE.LinearMipMapLinearFilter;
+				texture.minFilter = THREE.LinearMipMapLinearFilter;
+
+				var fog = new THREE.Fog( 0x4584b4, - 100, 3000 );
+
+				material = new THREE.ShaderMaterial( {
+
+					uniforms: {
+
+						"map": { type: "t", value: texture },
+						"fogColor" : { type: "c", value: fog.color },
+						"fogNear" : { type: "f", value: fog.near },
+						"fogFar" : { type: "f", value: fog.far },
+
+					},
+					vertexShader: document.getElementById( 'vs' ).textContent,
+					fragmentShader: document.getElementById( 'fs' ).textContent,
+					depthWrite: false,
+					depthTest: false,
+					transparent: true
+
+				} );
+
+
+				var plane = new THREE.Mesh( new THREE.PlaneGeometry( 64, 64 ) );
+
+				for ( var i = 0; i < 8000; i++ ) {
+
+					plane.position.x = Math.random() * 1000 - 500;
+					plane.position.y = - Math.random() * Math.random() * 200 - 15;
+					plane.position.z = THREE.Math.mapLinear( i, 0, 4000, 0, 8000 );
+					plane.rotation.z = Math.random() * Math.PI;
+					plane.scale.x = plane.scale.y = Math.random() * Math.random() * 1.5 + 0.5;
+
+					THREE.GeometryUtils.merge( geometry, plane );
+
+				}
+
+				mesh = new THREE.Mesh( geometry, material );
+				mesh.renderOrder = 1;
+				scene.add( mesh );
+
+				mesh = new THREE.Mesh( geometry, material );
+				mesh.position.z = - 8000;
+				mesh.renderOrder = 1;
+				scene.add( mesh );
+
+				renderer = new THREE.WebGLRenderer( { antialias: false, alpha: true } );
+				renderer.setSize( window.innerWidth, window.innerHeight );
+				container.appendChild( renderer.domElement );
+				renderer.setClearColor( 0x000000, 0 );
+				renderer.autoClear = false;
+
+				window.addEventListener( 'resize', onWindowResize, false );
+
+				// model
+				var loader = new THREE.GLTFLoader().setPath( 'models/gltf/Millenium_Falcon/' );
+				loader.load( 'models/gltf/Millenium_Falcon/export.gltf', function ( gltf ) {
+					gltf.scene.traverse( function ( child ) {
+
+					} );
+					gltf.scene.scale.x = 0.015
+					gltf.scene.scale.y = 0.015
+					gltf.scene.scale.z = 0.015
+					gltf.scene.position.y = 9
+					gltf.scene.renderOrder = 9999999
+					gltf.scene.position.x = 0
+					gltf.scene.rotation.y = 0.1
+					gltf.scene.rotation.y = 3.5
+					ship = gltf.scene;
+					console.log(gltf.scene);
+					scene2.add( gltf.scene );
+				} );
+
+			}
+
+			function onWindowResize( event ) {
+
+				camera.aspect = window.innerWidth / window.innerHeight;
+				camera.updateProjectionMatrix();
+
+				renderer.setSize( window.innerWidth, window.innerHeight );
+
+			}
+
+			function animate() {
+
+				requestAnimationFrame( animate );
+
+				position = ( ( Date.now() - start_time ) * 0.03 ) % 4000;
+				var delta = clock.getDelta();
+				controls.update( delta );
+
+				const cameraRotationY = camera.rotation.y;
+
+				if(ship){
+					var timer = Date.now();
+					ship.position.z = - position + 7997;
+					
+					ship.position.y = (Math.cos( timer / 1600 ) / 8) + 9;
+					ship.position.x = Math.sin( timer / 1600 ) / 8;
+					ship.rotation.z = Math.sin( timer / 1600 ) / 8;
+				}
+
+				camera.position.z = - position + 8000;
+
+
+				renderer.clear();
+				renderer.render( scene, camera );
+				renderer.clearDepth();
+				renderer.render( scene2, camera );
+
+			}
+
+		</script>
+		<div style="background: url(&quot;data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAACAAAAerCAYAAADCqqBhAAAHFUlEQVR4Xu3WhdKVVQBGYb0RQUpCREIEBElnRLpTQECkW7rB7u7uzvvTy1j/zPecK1jzfGfv/d59z+Pn/7sr/N0tgAABAgQIEOgFll+I94AAAgQGLzCqFhBAgMCo5RfbPTDqCQEECBAgQIBALnAp3gMr4oDRAggQIECAAIEVl9s9MHqlAAIECAxd4N76JhRA4N6VV9o90AesqgUEECBAgAABAquuxoNktYBYYEz9CQQQIECAwAgQuNbugTGr64A1AggQIEAgFhhbX8UCxq653u6BPmBtLSCAAAECBAj0AjfiPbC2DlgnYOgC4+r/gAACBAiMAIGb7R4Yt27wAetrAQEECBAgUAuM7wNutXtg/PrBB2yoBQQQIECAAIENt+M9IGBj/QkEDF5gQi0ggACBESBwp90DEzYKqAU2CSBAgAABAs+1e+C+TQJqgc0CCBAgQIDA8/Ee2CygFtgigACBWGBifQwFEJi45YV2DwggMHFr/ScUQIAAAQK9wIvxINk69IBJtcCkbfEnEECAAAECI0DgpXYPTNomoBbYLoAAgaELTK7vAQEjQODldg9M3i5g8AI7agEBBAgQILDjlXgPCBi8wJSd8Z9QAAECBAhM2flquwcEEOgFnqxPgQACBGqB+wU8+Vq7B+4XQCAX2FWfAgEECBDoBV6P98AuAQRqgd1xwFQBBAgQ6AXeaPfA1N0CCAxeYE8tIIAAAQJ73mz3wAMCCBB4qj6GAggQIPDUW/EeEECAwN76GA4+YFotIIDACBB4u90D0/YKIECgFtgngAABArnAO/Eg2RcHPCiAQC6wvz4FAggQILD/3XYPPCiAAIGn62MooBaYLoBAL/BeuwemPy2AAIFa4IAAAgQIvB/vgQMCYoEZ9ScQ0As8U/8JBRAg0At80O6BGc8IIECgFjgogEAsMLP+EwqYefDDdg8IIECAwMxD9UUkgACBQx/Fe0AAgcELzKoF+oDD8UU0SwABAoc/bvfALAEECBDIBY7UN6EAArXAQ0c+afeAAAIECPQCR+ubUACBXuDTeA8cFUCAwNAFZtf3wOxj8ScQQGAECHzW7oHZxwQQIEBg8ALHawEBBHqBz9tB8vBxAQQIEKgFTgggQOCLeA+cEECAAIFYYM5JAQQIfNnugTknBRAgQGDwAqdqAQEETn0V74HBB8ytBQQQINALnI6v4rkCCJz+ut0DcwUQIECAwJn6Kq4D5gnoBb5p98C8MwIIECBAoBY4K4DAt/EeOCuAQCzwSP0nFECgF3i2PoYCeoHv2j3wyLMCCBAgQKAWOCcgFphff4L5575v94AAAgQIECAw/3z9GAk4/0O8BwQQIFALLBBAIBe4ED9GCwRc+LHdAwsEECBAgACBXOBi/RoOPuDRiz+1g0QAAQIECBB49FL9GAm49HO8BwQQIDB4gYW1gIBe4HL8GC0UcPmXdg8sFECAAAECBHKBK/Vr2Af8Gu+BK0MPWFQLCCBAgACBRVfjx2gEBPzW7oFFVwUQIECAQCywuL6K+4Br9SfoA35v98DiawIIECBAgMDgBa7XAtf/iPeAgMELLKkFBBAgQKAXuBE/x0tu/NnuAQEECBAgQCAXWFq/hktvxs/x0pt/tXtAAAECBAgQINAL3Po73gMCCAxeYFktIIAAAQLLbv/T7gEBBAgQIECAQC7w2J1/2z0ggAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgAABAgQIECBAgEAt8D+6X90MNgmH3wAAAABJRU5ErkJggg==&quot;) 0% 0% / 32px 100%;"><canvas width="3430" height="6870" style="width: 980px; height: 1963px;"></canvas></div>
+	</body>
+</html>
