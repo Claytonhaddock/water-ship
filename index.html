@@ -270,6 +270,7 @@
 
 				const cameraRotationY = camera.rotation.y;
 
+				let zSin = 0;
 				if(ship){
 					var timer = Date.now();
 					ship.position.z = - position + 7997;
@@ -277,9 +278,10 @@
 					ship.position.y = (Math.cos( timer / 1600 ) / 8) + 9;
 					ship.position.x = Math.sin( timer / 1600 ) / 8;
 					ship.rotation.z = Math.sin( timer / 1600 ) / 8;
+					zSin = Math.sin( timer / 1600 ) / 8;
 				}
 
-				camera.position.z = - position + 8000;
+				camera.position.z = - position + 8000 + zSin;
 
 
 				renderer.clear();
