@@ -69,6 +69,10 @@
 
 			if ( ! Detector.webgl ) Detector.addGetWebGLMessage();
 
+			function isMobileDevice() {
+			    return (typeof window.orientation !== "undefined") || (navigator.userAgent.indexOf('IEMobile') !== -1);
+			};
+
 			var container;
 			var camera, scene, scene2, renderer, controls, ship;
 			var dirLight, dirLightHeper, hemiLight, hemiLightHelper;
@@ -111,23 +115,28 @@
 				camera = new THREE.PerspectiveCamera( 30, window.innerWidth / window.innerHeight, 1, 3000 );
 				camera.position.z = 6000;
 				camera.position.y = 10;
+				camera.rotation.x = -0.2;
 
-				controls = new THREE.FirstPersonControls(camera);
-		        controls.lookSpeed = 0.4;
-		        controls.movementSpeed = 20;
-		        controls.noFly = true;
-		        controls.lookVertical = true;
-		        controls.lookHorizontal = true;
+				if(isMobileDevice()) {
+					controls = new THREE.FirstPersonControls(camera);
+			        controls.lookSpeed = 0.4;
+			        controls.movementSpeed = 20;
+			        controls.noFly = true;
+			        controls.lookVertical = true;
+			        controls.lookHorizontal = true;
 
-		        controls.constrainVertical = true;
-		        controls.verticalMin = 1.5;
-		        controls.verticalMax = 1.8;
+			        controls.constrainVertical = true;
+			        controls.verticalMin = 1.5;
+			        controls.verticalMax = 1.8;
 
-		        controls.constrainHorizontal = true;
-		        controls.horizontalMin = 4.5;
-		        controls.horizontalMax = 6;
-		        controls.lon = -150;
-		        controls.lat = 120;
+			        controls.constrainHorizontal = true;
+			        controls.horizontalMin = 4.5;
+			        controls.horizontalMax = 6;
+			        controls.lon = -150;
+			        controls.lat = 120;
+				}
+
+
 
 				scene = new THREE.Scene();
 				scene2 = new THREE.Scene();
@@ -254,7 +263,10 @@
 
 				position = ( ( Date.now() - start_time ) * 0.03 ) % 4000;
 				var delta = clock.getDelta();
-				controls.update( delta );
+
+				if(isMobileDevice()){
+					controls.update( delta );					
+				}
 
 				const cameraRotationY = camera.rotation.y;
 
