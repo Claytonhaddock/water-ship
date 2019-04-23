@@ -117,7 +117,7 @@
 				camera.position.y = 10;
 				camera.rotation.x = -0.2;
 
-				if(isMobileDevice()) {
+				if(!isMobileDevice()) {
 					controls = new THREE.FirstPersonControls(camera);
 			        controls.lookSpeed = 0.4;
 			        controls.movementSpeed = 20;
@@ -264,7 +264,7 @@
 				position = ( ( Date.now() - start_time ) * 0.03 ) % 4000;
 				var delta = clock.getDelta();
 
-				if(isMobileDevice()){
+				if(!isMobileDevice()){
 					controls.update( delta );					
 				}
 
