@@ -26,6 +26,9 @@
 	<body>
 		<script src="three.js"></script>
 		<script src="js/controls/FirstPersonControls.js"></script>
+		<script src="js/loaders/DDSLoader.js"></script>
+		<script src="js/loaders/MTLLoader.js"></script>
+		<script src="js/loaders/OBJLoader.js"></script>
 		<script src="js/loaders/GLTFLoader.js"></script>
 		<script type="text/javascript" src="js/Detector.js"></script>
 
@@ -74,7 +77,7 @@
 			};
 
 			var container;
-			var camera, scene, scene2, renderer, controls, ship;
+			var camera, scene, scene2, renderer, controls, ship, xwing;
 			var dirLight, dirLightHeper, hemiLight, hemiLightHelper;
 			var mesh, geometry, material;
 
@@ -242,9 +245,24 @@
 					gltf.scene.rotation.y = 0.1
 					gltf.scene.rotation.y = 3.5
 					ship = gltf.scene;
-					console.log(gltf.scene);
 					scene2.add( gltf.scene );
-				} );
+				});
+
+				var loaderXwing = new THREE.GLTFLoader().setPath( 'models/gltf/' );
+				loaderXwing.load( 'models/gltf/xwing.gltf', function ( gltf ) {
+					gltf.scene.traverse( function ( child ) {
+
+					} );
+					gltf.scene.scale.x = 0.1
+					gltf.scene.scale.y = 0.1
+					gltf.scene.scale.z = 0.1
+					gltf.scene.position.y = 9
+					gltf.scene.renderOrder = 9999999
+					gltf.scene.position.x = 1
+					gltf.scene.rotation.y = 3.2
+					xwing = gltf.scene;
+					scene2.add( gltf.scene );
+				});
 
 			}
 
@@ -273,6 +291,12 @@
 				let zSin = 0;
 				if(ship){
 					var timer = Date.now();
+					if(xwing) {
+						xwing.position.z = - position + 7995;
+						xwing.position.y = (Math.cos( timer / 1000 ) / 8) + 9;
+						xwing.position.x = (Math.sin( timer / 1000 ) / 8) + 1;
+						xwing.rotation.z = Math.sin( timer / 1000 ) / 8;
+					}
 					ship.position.z = - position + 7997;
 					
 					ship.position.y = (Math.cos( timer / 1600 ) / 8) + 9;
