@@ -293,15 +293,15 @@
 					var timer = Date.now();
 					if(xwing) {
 						xwing.position.z = - position + 7994;
-						xwing.position.y = (Math.cos( timer / 1000 ) / 8) + 9;
-						xwing.position.x = (Math.sin( timer / 1000 ) / 8) + 0.35;
-						xwing.rotation.z = Math.sin( timer / 1000 ) / 8;
+						xwing.position.y = (Math.cos( timer / 2000 ) / 8) + 9;
+						xwing.position.x = (Math.sin( timer / 2000 ) / 8) + 0.25;
+						xwing.rotation.z = Math.sin( timer / 2000 ) / 8;
 					}
 					ship.position.z = - position + 7997;
 					
-					ship.position.y = (Math.cos( timer / 1600 ) / 8) + 9;
-					ship.position.x = (Math.sin( timer / 1600 ) / 8) - 0.35;
-					ship.rotation.z = Math.sin( timer / 1600 ) / 8;
+					ship.position.y = (Math.cos( timer / 2600 ) / 10) + 9;
+					ship.position.x = (Math.sin( timer / 2600 ) / 10) - 0.25;
+					ship.rotation.z = Math.sin( timer / 2600 ) / 10;
 					zSin = Math.sin( timer / 1600 ) / 8;
 				}
 
